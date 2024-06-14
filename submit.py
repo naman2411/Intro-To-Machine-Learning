@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 
 # You are allowed to import any submodules of sklearn that learn linear models e.g. sklearn.svm etc
 # You are not allowed to use other libraries such as keras, tensorflow etc
@@ -13,6 +13,36 @@ from sklearn.linear_model import LogisticRegression
 
 # You may define any new functions, variables, classes here
 # For example, functions to calculate next coordinate or step length
+
+def re_encode_challenge(C):     ## reencodes a {0,1} challenge to {1,-1} challenge
+    return 1-2*C
+
+def calculate_1D_X(D):          ## calculates the xi variables corresponidng to each challenge row 
+    X = np.zeros_like(D)
+    for i in range(len(D)):
+        prod = 1
+        for j in range(len(D[i])):
+            prod=prod*D[i,j]
+        
+        X[i,0] = prod 
+        for j in range(len(D[i])-1):
+            X[i,j+1] = X[i,j]/D[i,j]
+    return X
+
+def get_2D_X(X):			## 2d products xi*xj for i!= j
+    X2 = np.zeros( (len(X),int((len(X[0]))*( len(X[0]) -1)/2)) )
+    for i in range(len(X2)):
+        lis = []
+        for j in range(len(X[i])):
+            for k in range(j+1,len(X[i])):
+                lis.append(X[i,j]*X[i,k])
+
+        X2[i] = np.array(lis)
+    return X2
+
+def join(X,X2):		## join one dimensional and squared variables to get the feature 
+    return np.concatenate((X,X2),axis = 1)
+
 
 ################################
 # Non Editable Region Starting #
@@ -28,14 +58,14 @@ def my_fit( X_train, y_train ):
 	
 	# THE RETURNED MODEL SHOULD BE A SINGLE VECTOR AND A BIAS TERM
 	# If you do not wish to use a bias term, set it to 0
+    features = my_map(X_train)
+    clf = LinearSVC(dual = False,C = 1)
+    
+    clf.fit(features,y_train)
+    b = clf.intercept_[0]
+    w = clf.coef_[0]
  
-	features = my_map(X_train)
-	clf = LogisticRegression( solver ="lbfgs", C=1, tol = 0.005)
-	clf.fit(features,y_train)
-	
-	w = clf.coef_[0]
-	b = clf.intercept_[0]
-	return w, b
+    return w, b
 
 
 ################################
@@ -45,20 +75,10 @@ def my_map( X ):
 ################################
 #  Non Editable Region Ending  #
 ################################
-
+	D = re_encode_challenge(X)
+	X1 = calculate_1D_X(D)
+	X2 = get_2D_X(X1)
+	feat = join(X1,X2)
 	# Use this method to create features.
 	# It is likely that my_fit will internally call my_map to create features for train points
-	D = np.flip(1-2*X, axis = 1)	## re-encode {0,1} challenges to {1,-1} challenges and flip the order
-	X1 = np.cumprod(D, axis = 1)	## first order features
-	X1 = np.flip(X1,axis = 1)       ## flip just for personal satisfaction :)
-	l = len(X1[0])					
-	X2 = np.zeros( (len(X1), int(l*(l-1)/2) ) ) 	##stores second order terms
-	for i in range(len(X2)):
-		so = np.outer(X1[i],X1[i])		##find outer product of 1d features of this challenge
-		so = np.triu(so,k=1)			## make zero all elements on and below principal diagonal
-		so = so.flatten()				## make 1d vector from upper triangular matrix
-		so = so[so!=0]					## keep only non zero part
-		X2[i] = so
-	feat = np.concatenate((X1,X2),axis = 1)	## take both 1st order and second order features
-	
 	return feat
