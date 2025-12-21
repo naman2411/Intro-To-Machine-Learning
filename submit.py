@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.svm import LinearSVC
 
-# You are allowed to import any submodules of sklearn that learn linear models e.g. sklearn.svm etc
+# You  are allowed to import any submodules of sklearn that learn linear models e.g. sklearn.svm etc
 # You are not allowed to use other libraries such as keras, tensorflow etc
 # You are not allowed to use any scipy routine other than khatri_rao
 
@@ -81,4 +81,5 @@ def my_map( X ):
 	feat = join(X1,X2)
 	# Use this method to create features.
 	# It is likely that my_fit will internally call my_map to create features for train points
+
 	return feat
